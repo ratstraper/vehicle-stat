@@ -1,0 +1,822 @@
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+//package kz.onay.driversassistant.proto;
+package protocol.driver_assistant;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+
+/**
+* ПВ - помощник водителя
+* ПЕ - подвижная единица
+*/
+
+
+/**
+* Сервис помощника водителя
+*/
+service ApiService {
+
+    /**
+    * Возвращает информацию о ПВ
+    */
+        rpc GetAssistant (GetAssistantRequest) returns (Assistant) {}
+
+    /**
+    * Возвращает схему маршрута
+    */
+        rpc GetRouteScheme (GetByIdSinceRequest) returns (RouteScheme) {}
+
+    /**
+    * Возвращает список перевозчиков
+    */
+        rpc GetProviders (GetSinceRequest) returns (EntityList) {}
+
+    /**
+    * Возвращает список маршрутов для данного перевозчика
+    */
+        rpc GetRoutes (GetByIdSinceRequest) returns (EntityList) {}
+
+    /**
+    * Возвращает список ПЕ для данного перевозчика
+    */
+        rpc GetVehicles (GetByIdSinceRequest) returns (EntityList) {}
+
+    /**
+    * Возвращает поток файлов озвучки для остановок, изменившихся с указанной даты для схемы с указанным id
+    */
+        rpc GetStopSoundFiles (GetByIdWithMetadataRequest) returns (stream StopSoundFile) {}
+
+    /**
+    * Возвращает файл обновления (в том числе UpdateInfo.xml)
+    */
+        rpc GetUpdate (GetUpdateRequest) returns (stream BinaryFileChunk) {}
+
+    /**
+    * Возвращает версию ПО, до которой необходимо осуществить обновление для данного ПВ
+    */
+        rpc CheckUpdate (CheckUpdateRequest) returns (google.protobuf.Int32Value) {}
+
+    /**
+    * Осуществляет привязку ПВ к ПЕ
+    */
+        rpc AssignVehicle (AssignVehicleRequest) returns (Assistant) {}
+
+    /**
+    * Осуществляет привязку карты водителя к ПЕ
+    */
+        rpc ReportCard (CardRequest) returns (TelemetryResponse) {}
+
+    /**
+    * Телеметрия
+    */
+        rpc ReportTelemetry (TelemetryRequest) returns (TelemetryResponse) {}
+
+    /**
+    * Телеметрия, включающая состояния Gps-модулей
+    */
+		rpc ReportGpsTelemetry (TelemetryGpsRequest) returns (TelemetryResponse) {}
+
+    /**
+    * Телеметрия, включающая CCID сим-карт
+    */
+		rpc ReportCcidTelemetry (TelemetryCcidRequest) returns (TelemetryResponse) {}
+
+    /**
+    * Телеметрия, включающая состояния терминалов оплаты
+    */
+		rpc ReportTerminalTelemetry (TelemetryTerminalRequest) returns (TelemetryResponse) {}
+
+    /**
+    * Телеметрия, включающая состояния терминалов оплаты и CCID сим-карт
+    */
+		rpc ReportCcidTerminalTelemetry (TelemetryCcidTerminalRequest) returns (TelemetryResponse) {}
+
+    /**
+    * Телеметрия, включающая состояния GPS-модулей и CCID сим-карт
+    */
+		rpc ReportGpsCcidTelemetry (TelemetryGpsCcidRequest) returns (TelemetryResponse) {}
+
+    /**
+    * Телеметрия, включающая состояния терминалов оплаты и Gps-модулей
+    */
+		rpc ReportGpsTerminalTelemetry (TelemetryGpsTerminalRequest) returns (TelemetryResponse) {}
+
+    /**
+    * Телеметрия, включающая наиболее полную информацию о состоянии оборудования
+    */
+		rpc ReportAllTelemetry (TelemetryAllRequest) returns (TelemetryResponse) {}
+
+    /**
+    * Запрос к сервису Ublox AssistNow Online для получения данных GNSS-A
+    */
+		rpc GetGnssAssistance (GnssaRequest) returns (stream BinaryFileChunk) {}
+}
+
+
+/**
+* Тип команды
+*/
+enum Command 
+{
+    None = 0;
+    ReloadMetadata = 1;
+    RestartProgram = 2;
+    RestartOS = 3;
+    RequestNewId = 4;
+    ResendCcid = 5;
+    ExchangeWithArm = 6;
+    ResendImei = 7;
+    UpdateGpsFirmware = 8;
+    DisableFareDisplay = 9;
+    EnableFareDisplay = 10;
+    NoAction = 11;
+    ReloadStopMedia = 12;
+    RestartMasterTerminal = 13;
+    PlayCovidNotice = 14;
+    Update = 15;
+}
+
+/**
+* Язык (может использоваться для идентификации файлов озвучки остановок)
+*/
+enum Language
+{
+    Undefined = 0;
+    English = 1;
+    Kazakh = 2;
+    Russian = 3;
+}
+
+/**
+* Регион (может использоваться для запроса специфичных для региона данных, например - GNSS Assistance)
+*/
+enum Region
+{
+	Unknown = 0;
+	Almaty = 1;
+	Qaragandy = 2;
+	Jezqazgan = 3;
+	Saran = 4;
+}
+
+/**
+* Тип GSM-модуля
+*/
+enum GsmType
+{
+	Data = 0;
+	Voice = 1;
+}
+
+/**
+* Статус Gps-приемника
+*/
+enum GpsStatus 
+{
+	GpsStatusUnknown = 0;
+    GpsStatusNoData = 1;
+    GpsStatusUnknownData = 2;
+    GpsStatusInvalidData = 3;
+    GpsStatusValidData = 4;
+}
+
+/**
+* Статус терминала оплаты
+*/
+enum TerminalStatus 
+{
+    TerminalStatusOk = 0;
+    TerminalStatusExchangeRequired = 1;
+    TerminalStatusExchange = 2;
+    TerminalStatusLocked   = 3;
+    TerminalStatusSynchRequired = 4;
+    TerminalStatusSynch = 5;
+    TerminalStatusUnavailable   = 6;
+    TerminalStatusDisconnected  = 7;
+    TerminalStatusUnknown  = 8;
+}
+
+/**
+* Статус ПЕ
+*/
+enum VehicleStatus 
+{
+    VehicleStatusActive = 0;
+    VehicleStatusInRepair = 1;
+    VehicleStatusNoDriver = 2;
+    VehicleStatusIdle = 3;
+    VehicleStatusDemounted = 4;
+    VehicleStatusUnknown = 5;
+}
+
+/**
+* Статус ПЕ на маршруте
+*/
+enum RouteStatus 
+{
+    RouteStatusOnRoute = 0;
+    RouteStatusOnEndStop = 1;
+    RouteStatusOnBase = 2;
+    RouteStatusOffRoute = 3;
+    RouteStatusUnknown = 4;
+}
+
+/**
+* Информация о сущности (пара идентификатор - наименование)
+*/
+message Entity {
+    /**
+    * Уникальный идентификатор
+    */
+    int32 id = 1;
+    /**
+    * Наименование
+    */
+    string name = 2;
+}
+
+/**
+* Информация о списке сущностей и времени последнего изменения
+*/
+message EntityList {
+    /**
+    * Уникальный идентификатор
+    */
+    repeated Entity items = 1;
+    /**
+    * Время изменения информации
+    */
+    google.protobuf.Timestamp change_time = 2;
+}
+
+/**
+* Точка с координатами в проекции UTM
+*/
+message Point {
+    /**
+    * Долгота
+    */
+    double longitude = 1;
+    /**
+    * Широта
+    */
+    double latitude = 2;
+}
+
+/**
+* Результат отправки телеметрии
+*/
+message TelemetryResponse {
+    /**
+    * TRUE если информация обновлена без ошибок
+    */
+    bool success = 1;
+    /**
+    * Количество рейсов, пройденных ПВ, подсчитанных на сервере
+    */
+    int32 haul_count = 2;
+    /**
+    * Команда для исполнения на ПВ
+    */
+    int32 command = 3;
+    /**
+    * Дополнительный аргумент команды для исполнения на ПВ (0 если отсутсвует)
+    */
+    int32 command_arg = 4;
+    /**
+    * TRUE если данные о ПВ изменились со времени последнего их считывания
+    */
+    bool changed = 5;
+}
+
+/**
+* Информация о ПВ
+*/
+message Assistant {
+    /**
+    * Идентификатор ПВ
+    */
+    int32 id = 1;
+    /**
+    * Идентификатор ПЕ
+    */
+    int32 vehicle_id = 2;
+    /**
+    * Идентификатор перевозчика
+    */
+    int32 provider_id = 3;
+    /**
+    * Идентификатор группы
+    */
+    int32 group_id = 4;
+    /**
+    * Идентификатор маршрута
+    */
+    int32 route_id = 5;
+    /**
+    * Идентификатор схемы маршрута
+    */
+    int32 scheme_id = 6;
+    /**
+    * Наименование ПЕ
+    */
+    string vehicle_name = 7;
+    /**
+    * Наименование перевозчика
+    */
+    string provider_name = 8;
+    /**
+    * Наименование группы
+    */
+    string group_name = 9;
+    /**
+    * Наименование маршрута
+    */
+    string route_name = 10;
+    /**
+    * Номер телефона экстренной службы
+    */
+    string emergency_phone_number = 11;
+    /**
+    * Номер телефона диспетчерской службы
+    */
+    string dispatcher_phone_number = 12;
+    /**
+    * Номер телефона диспетчерской службы перевозчика
+    */
+    string provider_phone_number = 13;
+    /**
+    * Номер телефона службы тех. поддержки
+    */
+    string tech_service_phone_number = 14;
+    /**
+    * Номера телефонов, с которых разрешен дозвон на ПВ
+    */
+    repeated string phone_numbers = 15;
+    /**
+    * Номера телефонов, на которые не разрешен дозвон с ПВ
+    */
+    repeated string incoming_phone_numbers = 16;
+    /**
+    * Интервал отправки данных с телеметрией с ПВ в миллисекундах
+    */
+    int32 telemetry_interval = 17;
+    /**
+    * Текущие данные о рейсах и команда для выполения на ПВ
+    */
+    TelemetryResponse telemetry_response = 18;
+    /**
+    * Время на сервере для синхронизации (локальное с учетом временной зоны)
+    */
+    google.protobuf.Timestamp server_time = 19;
+    /**
+    * Время последнего изменения данных в структуре
+    */
+    google.protobuf.Timestamp change_time = 20;
+    /**
+    * Текущая версия ПО
+    */
+    int32 software_version = 21;
+    /**
+    * Запрос на обновление ПО до указанной версии
+    */
+    int32 update_requested = 22;
+    /**
+    * Статус ПЕ (в работе, на ремонте и т.д.)
+    */
+    VehicleStatus vehicle_status = 23;
+    /**
+    * Уникальный идентификатор SOC
+    */
+    string uid = 24;
+    /**
+    * Регион
+    */
+    Region region = 25;
+}
+
+/**
+* Информация об остановке
+*/
+message Stop {
+    /**
+    * Уникальный идентификатор остановки
+    */
+    int32 id = 1;
+    /**
+    * Наименование на казахском языке
+    */
+    string name_kz = 2;
+    /**
+    * Наименование на русском языке
+    */
+    string name_ru = 3;
+    /**
+    * Наименование на английском языке
+    */
+    string name_en = 4;
+    /**
+    * Координаты
+    */
+    Point point = 5;
+}
+
+/**
+* Информация о направлении маршрута
+*/
+message Direction {
+    /**
+    * Начальная остановка направления
+    */
+    int32 start_stop_id = 1;
+    /**
+    * Конечная остановка направления
+    */
+    int32 end_stop_id = 2;
+    /**
+    * Массив точек с координатами, формирующими направление
+    */
+    repeated Point points = 3;
+    /**
+    * Массив остановок вдоль данного направления
+    */
+    repeated Stop stops = 4;
+}
+
+/**
+* Информация о схеме маршрута
+*/
+message RouteScheme {
+    /**
+    * Уникальный идентификатор
+    */
+    int32 id = 1;
+    /**
+    * Направления маршрута
+    */
+    repeated Direction directions = 2;
+    /**
+    * Время изменения информации
+    */
+    google.protobuf.Timestamp change_time = 3;
+}
+
+/**
+* Информация о GPS приемнике
+*/
+message GpsState {
+    /**
+    * Статус
+    */
+    GpsStatus status = 1;
+    /**
+    * Версия прошивки
+    */
+    string firmware = 2;
+}
+
+/**
+* Информация о GSM модуле
+*/
+message GsmState {
+    /**
+    * Тип модуля
+    */
+    GsmType type = 1;
+    /**
+    * CCID
+    */
+    string ccid = 2;
+    /**
+    * Номер телефона
+    */
+    string phone_number = 3;
+}
+
+/**
+* Информация о Терминале оплаты
+*/
+message TerminalState {
+    /**
+    * Идентификатор терминала
+    */
+    string id = 1;
+    /**
+    * Серийный номер терминала
+    */
+    string serial = 2;
+    /**
+    * Версия прошивки
+    */
+    string firmware = 3;
+    /**
+    * Статус
+    */
+    TerminalStatus status = 4;
+}
+
+/**
+* Файл озвучки остановки
+*/
+message StopSoundFile {
+    int64  id = 1;
+    string name = 2;
+    int64  size = 3;
+    bytes  data = 4;
+    google.protobuf.Timestamp change_time = 5;
+}
+
+/**
+* Файл бинарный (например, содержащий обновление)
+*/
+message BinaryFileChunk {
+    int64  size = 1;
+    bytes  data = 2;
+}
+
+
+/**
+* Структуры данных запросов сервиса
+*/
+
+message CheckUpdateRequest {
+    /**
+    * Идентификатор ПВ
+    */
+    int32 id = 1;
+    /**
+    * Версия ПО
+    */
+    int32 version = 2;
+}
+
+message GetUpdateRequest {
+    /**
+    * Идентификатор ПВ
+    */
+    int32 id = 1;
+    /**
+    * Версия ПО
+    */
+    int32 version = 2;
+    /**
+    * Наименование запрашиваемого файла
+    */
+    string file_name = 3;
+    /**
+    * Смещение (в байтах), начиная с которого следует скачивать файл
+    */
+    int32 offset = 4;
+}
+
+message GetAssistantRequest {
+    /**
+    * Идентификатор ПВ (0 если не известен)
+    */
+    int32 id = 1;
+    /**
+    * Идентификатор оборудования (строковый)
+    */
+    string uid = 2;
+    /**
+    * IP-адрес ПВ
+    */
+    string ip = 3;
+    /**
+    * Время последнего изменения (возвращается информация, обновленная с этого времени)
+    */
+    google.protobuf.Timestamp since = 4;
+}
+
+message GetByIdRequest {
+    /**
+    * Идентификатор
+    */
+    int32 id = 1;
+}
+
+message GetByIdSinceRequest {
+    /**
+    * Идентификатор
+    */
+    int32 id = 1;
+    /**
+    * Время последнего изменения (возвращается информация, обновленная с этого времени)
+    */
+    google.protobuf.Timestamp since = 2;
+}
+
+message GetByIdWithMetadataRequest {
+    /**
+    * Идентификатор
+    */
+    int32 id = 1;
+    /**
+    * Метаданные (интерпретируются обработчиком запроса)
+    */
+    string metadata = 2;
+}
+
+message GetSinceRequest {
+    /**
+    * Время последнего изменения (возвращается информация, обновленная с этого времени)
+    */
+    google.protobuf.Timestamp since = 1;
+}
+
+message AssignVehicleRequest {
+    /**
+    * Идентификатор ПВ
+    */
+    int32 id = 1;
+    /**
+    * Идентификатор ПЕ, к которой осуществляется привязка
+    */
+    int32 vehicle_id = 2;
+}
+
+message CardRequest {
+    /**
+    * Идентификатор ПВ
+    */
+    int32 id = 1;
+    /**
+    * Идентификатор карты, к которой осуществляется привязка
+    */
+    int32 card_id = 2;
+}
+
+message TelemetryRequest {
+    /**
+    * Идентификатор ПВ
+    */
+    int32 id = 1;
+    /**
+    * Текущая версия ПО
+    */
+    int32 version = 2;
+    /**
+    * Время последнего изменения данных по ПВ
+    */
+    google.protobuf.Timestamp since = 3;
+}
+
+message TelemetryGpsRequest {
+    /**
+    * Идентификатор и версия ПО
+    */
+    TelemetryRequest base = 1;
+    /**
+    * Статусы Gps-модулей
+    */
+    repeated GpsState gps_modules = 2;
+}
+
+message TelemetryCcidRequest {
+    /**
+    * Идентификатор и версия ПО
+    */
+    TelemetryRequest base = 1;
+    /**
+    * Ccid Sim-карты канала данных
+    */
+    string data_ccid = 2;
+    /**
+    * Ccid Sim-карты голосового канала
+    */
+    string voice_ccid = 3;
+}
+
+message TelemetryGpsCcidRequest {
+    /**
+    * Идентификатор и версия ПО
+    */
+    TelemetryRequest base = 1;
+    /**
+    * Статусы Gps-модулей
+    */
+    repeated GpsState gps_modules = 2;
+    /**
+    * Ccid Sim-карты канала данных
+    */
+    string data_ccid = 3;
+    /**
+    * Ccid Sim-карты голосового канала
+    */
+    string voice_ccid = 4;
+}
+
+message TelemetryTerminalRequest {
+    /**
+    * Идентификатор и версия ПО
+    */
+    TelemetryRequest base = 1;
+    /**
+    * Статусы терминалов оплаты
+    */
+    repeated TerminalState fare_terminals = 2;
+    /**
+    * Дата и время последней успешной инкассации
+    */
+    google.protobuf.Timestamp exchange_time = 3;
+}
+
+message TelemetryGpsTerminalRequest {
+    /**
+    * Идентификатор и версия ПО
+    */
+    TelemetryRequest base = 1;
+    /**
+    * Статусы Gps-модулей
+    */
+    repeated GpsState gps_modules = 2;
+    /**
+    * Статусы терминалов оплаты
+    */
+    repeated TerminalState fare_terminals = 3;
+    /**
+    * Дата и время последней успешной инкассации
+    */
+    google.protobuf.Timestamp exchange_time = 4;
+}
+
+message TelemetryCcidTerminalRequest {
+    /**
+    * Идентификатор и версия ПО
+    */
+    TelemetryRequest base = 1;
+    /**
+    * Ccid Sim-карты канала данных - integrated circuit card identifier
+    */
+    string data_ccid = 2;
+    /**
+    * Ccid Sim-карты голосового канала
+    */
+    string voice_ccid = 3;
+    /**
+    * Статусы терминалов оплаты
+    */
+    repeated TerminalState fare_terminals = 4;
+    /**
+    * Дата и время последней успешной инкассации
+    */
+    google.protobuf.Timestamp exchange_time = 5;
+}
+
+message TelemetryAllRequest {
+    /**
+    * Идентификатор и версия ПО
+    */
+    TelemetryRequest base = 1;
+    /**
+    * Статусы Gps-модулей
+    */
+    repeated GpsState gps_modules = 2;
+    /**
+    * Статусы терминалов оплаты
+    */
+    repeated TerminalState fare_terminals = 3;
+    /**
+    * Дата и время последней успешной инкассации
+    */
+    google.protobuf.Timestamp exchange_time = 4;
+    /**
+    * Ccid Sim-карты канала данных
+    */
+    string data_ccid = 5;
+    /**
+    * Ccid Sim-карты голосового канала
+    */
+    string voice_ccid = 6;
+    /**
+    * Идентификатор карты, к которой осуществляется привязка
+    */
+    int32 card_id = 7;
+}
+
+message GnssaRequest {
+    /**
+    * Идентификатор ПВ
+    */
+    int32 id = 1;
+    /**
+    * Регион
+    */
+    Region region_id = 2;
+}
