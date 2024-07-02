@@ -1,0 +1,7 @@
+board,route,appVersion,url,imei,nfc,airmode,printer,dialer,terminal,status
+"(2520) 634EU02","63","1.0.32","http://10.131.246.167:8080","863717050708127","on","off","UNKNOWN",,"","VehicleStatusActive"
+"(2524) 608EU02","63","1.0.32","http://10.131.246.165:8080","863717050712236","on","off","STS_NORMAL",,"T154696","VehicleStatusActive"
+"(2525) 608EU02","63","1.0.32","http://10.131.246.184:8080","863717050702161","on","off","STS_NORMAL",,"T154526","VehicleStatusActive"
+"(2527) 518EU02","63","1.0.32","http://10.131.246.205:8080","863717050734511","on","off","UNKNOWN",,"T154590","VehicleStatusActive"
+"(2531) 429EU02","63","1.0.32","http://10.131.246.175:8080","863717050707962","on","off","STS_NORMAL",,"T154665","VehicleStatusActive"
+"(2680) 568EU02","63","1.0.32","http://10.131.246.247:8080","863717050722292","on","off","STS_NORMAL",,"T154258","VehicleStatusActive"

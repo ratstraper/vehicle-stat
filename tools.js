@@ -29,6 +29,14 @@ let createIMEI = (str) => {
     } 
 }
 
+const storeText = (data, path) => {
+    try {
+      fs.writeFileSync(path, data)
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
 const storeData = (data, path) => {
     try {
       fs.writeFileSync(path, JSON.stringify(data))
@@ -103,5 +111,21 @@ function uploadApk(host, filePath, progressCallback, successCallback, errorCallb
     fileStream.pipe(req)
 }
 
+const jsonToCsv = (data) => {
+    // return (
+    //     Object.keys(data[0]).join(",") +
+    //     "\n" +
+    //     data.map((d) => Object.values(d).join(",")).join("\n")
+    //   );
 
-module.exports = { createIMEI, storeData, dynamicSort, uploadApk };
+    const items = data
+    const replacer = (key, value) => value === null ? '' : value // specify how you want to handle null values here
+    const header = Object.keys(items[0])
+    const csv = [
+        header.join(','), // header row first
+        ...items.map(row => header.map(fieldName => JSON.stringify(row[fieldName], replacer)).join(','))
+    ].join('\r\n')
+    return csv
+}
+
+module.exports = { createIMEI, storeData, storeText, dynamicSort, uploadApk, jsonToCsv };

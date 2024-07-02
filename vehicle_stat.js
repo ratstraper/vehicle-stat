@@ -71,6 +71,7 @@ const getVehicle = async (ip) => {
         obj.nfc = n["Radio NFC"]
         obj.airmode = n["AirplaneMode"]
         obj.printer = n["Printer Status"]
+        obj.dialer = n["Dialer"]
         try {
             var t = await getJSON(`${url}/terminal`)
             obj.terminal = t.masterState.msamId
@@ -86,7 +87,7 @@ const getVehicle = async (ip) => {
             // obj.provider = assistant.provider_name
         } catch(error) {
             obj.status = "Unknown"
-            console.error("client.getAssistant", error);
+            // console.error("client.getAssistant", error);
         }
         return obj
   } catch (error) {

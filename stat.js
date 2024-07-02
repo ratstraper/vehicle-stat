@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { storeData, dynamicSort, uploadApk } = require("./tools.js")
+const { storeData, storeText, dynamicSort, uploadApk, jsonToCsv } = require("./tools.js")
 const { getVehicle, getAssistant } = require("./vehicle_stat.js")
 
 let ips = process.env.IPS.split(" ") //"123.123.123. 124.124.124. 125.125.125"
@@ -21,7 +21,7 @@ const showAssistant = async (idAssistant) => {
     }
 }
 
-const allVehicles = async (filename) => {
+const allVehicles = async (filename, csv_format) => {
     for(var y = 0; y < ips.length; y++) { 
         let p = Array();
         for(var i = 1; i < 256; i++) {
@@ -31,7 +31,11 @@ const allVehicles = async (filename) => {
     }
     vehicles.sort(dynamicSort("board"))
     vehicles.sort(dynamicSort("route"))
-    storeData(vehicles, filename)
+    if(csv_format) {
+        storeText(jsonToCsv(vehicles), filename.replace(/\.[^.]+$/, '.csv'))
+    } else {
+        storeData(vehicles, filename)
+    }
 }
 
 const allVehiclesByStep = async (filename) => {
@@ -75,10 +79,10 @@ const installDA = async (filename, ip) => {
 
 (async () => {
     const args = require('yargs').argv
-    // console.log(args)
+    console.log(args)
 
     if(args.A) {
-        await allVehicles(args.o || "vehicles.json")
+        await allVehicles(args.o || "vehicles.json", args.csv)
         // await allVehiclesByStep(args.o || "vehicles.json")
     } else if(args.R != undefined) {
         await restart(args.R)
@@ -91,6 +95,7 @@ const installDA = async (filename, ip) => {
         console.log("Usage: node stat.js [options] <mainclass> [args...]\n")
         console.log(" where options include:\n")
         console.log(" -A                collect all DAs data on the IP address range [10.131.240.x, 10.131.246.x]")
+        console.log(" --csv             converting output data to CSV format")
         console.log(" --o <filename>    save the result in a file named <filename>\n")
         console.log(" -R <ip>           restart DA by IP\n")
         console.log(" --id <number>     display data on DA ID which is equal to <number>\n")
