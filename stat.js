@@ -65,6 +65,13 @@ const restart = async (ip) => {
       console.log(result)
 }
 
+const termRestart = async (ip) => {
+    let response = await fetch(`http://${ip}:8080/term/restart`, {method: 'POST'})
+      let result = await response.json()
+      console.log(result)
+}
+
+
 const installDA = async (filename, ip) => {
 
     uploadApk(
@@ -86,6 +93,8 @@ const installDA = async (filename, ip) => {
         // await allVehiclesByStep(args.o || "vehicles.json")
     } else if(args.R != undefined) {
         await restart(args.R)
+    } else if(args.T != undefined) {
+        await termRestart(args.T)        
     } else if(args.id > 0) {
         await showAssistant(args.id)
     } else if(args.I && args.file != undefined && args.ip != undefined) {
@@ -98,7 +107,8 @@ const installDA = async (filename, ip) => {
         console.log(" --csv             converting output data to CSV format")
         console.log(" --o <filename>    save the result in a file named <filename>\n")
         console.log(" -R <ip>           restart DA by IP\n")
-        console.log(" --id <number>     display data on DA ID which is equal to <number>\n")
+        console.log(" -T <ip>           restart TERMT005.031-031 R1 by IP\n")
+        console.log(" --id <number>     display data on DA ID which is equal to <number>\n")    
         // console.log(" -I                install new version")
         // console.log(" --file <filename> download apk-file")
         // console.log(" --ip <ip>         IP DA\n")    
