@@ -128,4 +128,32 @@ const jsonToCsv = (data) => {
     return csv
 }
 
-module.exports = { createIMEI, storeData, storeText, dynamicSort, uploadApk, jsonToCsv };
+const loadData = (path) => {
+    try {
+      return fs.readFileSync(path, 'utf8')
+    } catch (err) {
+      // console.error(err)
+      return false
+    }
+  }
+
+const cmd = async (ip, command) => {
+    let response = await fetch(`http://${ip}:8080/run?${command}`, {method: 'GET'})
+      let result = await response.json()
+      console.log(result)
+}
+
+const restart = async (ip) => {
+    let response = await fetch(`http://${ip}:8080/restart`, {method: 'POST'})
+      let result = await response.json()
+      console.log(result)
+}
+
+const termRestart = async (ip) => {
+    let response = await fetch(`http://${ip}:8080/term/restart`, {method: 'POST'})
+      let result = await response.json()
+      console.log(result)
+}
+
+
+module.exports = { createIMEI, storeData, storeText, dynamicSort, uploadApk, jsonToCsv, loadData, cmd, restart, termRestart };
