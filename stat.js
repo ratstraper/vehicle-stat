@@ -84,6 +84,14 @@ const installDA = async (filename, ip) => {
         )
 }
 
+const v36 = async (ip) => {
+    try {
+        let a = await getVehicle(ip)
+        // if(a != null)
+        //     vehicles.push(a)
+    } catch(e) {}
+}
+
 (async () => {
     const args = require('yargs').argv
     console.log(args)
@@ -91,6 +99,8 @@ const installDA = async (filename, ip) => {
     if(args.A) {
         await allVehicles(args.o || "vehicles.json", args.csv)
         // await allVehiclesByStep(args.o || "vehicles.json")
+    // } else if(args.B) {
+    //     await v36("10.131.246.205")        
     } else if(args.R != undefined) {
         await restart(args.R)
     } else if(args.T != undefined) {

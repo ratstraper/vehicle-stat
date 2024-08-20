@@ -1,4 +1,5 @@
 const { createIMEI } = require("./tools.js")
+const { parse } = require("himalaya")
 var grpc = require('@grpc/grpc-js');
 var protoLoader = require('@grpc/proto-loader');
 
@@ -16,13 +17,47 @@ var client = new guidejet.ApiService('api.guidejet.kz:5000',
                                            grpc.credentials.createInsecure());
 
 
+            async function readFromStream(stream) {
+                const reader = stream.getReader();
+                const decoder = new TextDecoder();
+                let result = '';
+
+                try {
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) {
+                            break;
+                        }
+                        result += decoder.decode(value, { stream: true });
+                    }
+                } catch (error) {
+                    console.error('Ошибка при чтении потока:', error);
+                } finally {
+                    reader.releaseLock();
+                }
+
+                return result;
+            }
+
 const getJSON = async (url) => {
     console.log(url)
     const response = await fetch(url);
     if (!response.ok) {
-       throw new Error("network error");
+        throw new Error("network error");
     }
-    return await response.json();
+    const body = await readFromStream(response.body);
+    try {
+        return await JSON.parse(body);
+    } catch(err) {
+        if(err.toString().startsWith('SyntaxError: Unexpected token')) {
+            var e = new Error("Format")
+            e.name = "Format"
+            e.message = body
+            throw e
+        }
+        // throw err
+    }
+    // console.log(await response.text())
   }
 
 
@@ -57,14 +92,35 @@ const getAssistant = async (id, imei) => {
 
 const getVehicle = async (ip) => {
     let url = `http://${ip}:8080`
+    var obj = {}
     try {
         var v = await getJSON(url);
-        var obj = {
-            board: v.board,
-            route: v.route,
-            appVersion: v.appVersion || v.app_version,
-            url: url
+        obj.board = v.board
+        obj.route = v.route
+        obj.appVersion = v.appVersion || v.app_version
+        obj.url = url
+    } catch(error) {
+        if(error.message === 'fetch failed') {
+            console.log('fetch failed', error.cause.code)
+            return
         }
+        // console.log(error.toString())
+        // console.log(await error.message)
+        // console.log(url)
+        // return
+        // const response = await fetch(url);
+        // if (!response.ok) {
+        //    throw new Error("network error");
+        // }
+        // var r = await response.text();
+        const json = parse(error.message)
+        const body = json[2].children[3].children[1]
+        obj.board = body.children[3].children[3].children[0].content
+        obj.route = body.children[5].children[3].children[0].content
+        obj.appVersion = body.children[1].children[3].children[0].content
+        obj.url = url
+    }
+    try {
         var n = await getJSON(`${url}/network`)
         let imei = createIMEI(n["Mobile Equipment Identifier"])
         obj.imei = imei
@@ -89,12 +145,14 @@ const getVehicle = async (ip) => {
             obj.status = "Unknown"
             // console.error("client.getAssistant", error);
         }
+        console.log(obj)
         return obj
   } catch (error) {
-    // console.error("getVehicle", error);
+    console.error("getVehicle", error);
     // throw new Error("don't open ip")
   }
 }
+
 
 // (async () => {
 //     const arg = process.argv.slice(2)

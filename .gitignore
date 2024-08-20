@@ -1,5 +1,6 @@
 /node_modules
 /vehicles.json
-*.csv
+/*.csv
+/*.txt
 /package-lock.json
 .env
