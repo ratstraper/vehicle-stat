@@ -17,27 +17,27 @@ var client = new guidejet.ApiService('api.guidejet.kz:5000',
                                            grpc.credentials.createInsecure());
 
 
-            async function readFromStream(stream) {
-                const reader = stream.getReader();
-                const decoder = new TextDecoder();
-                let result = '';
+async function readFromStream(stream) {
+    const reader = stream.getReader();
+    const decoder = new TextDecoder();
+    let result = '';
 
-                try {
-                    while (true) {
-                        const { done, value } = await reader.read();
-                        if (done) {
-                            break;
-                        }
-                        result += decoder.decode(value, { stream: true });
-                    }
-                } catch (error) {
-                    console.error('Ошибка при чтении потока:', error);
-                } finally {
-                    reader.releaseLock();
-                }
-
-                return result;
+    try {
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+                break;
             }
+            result += decoder.decode(value, { stream: true });
+        }
+    } catch (error) {
+        console.error('Ошибка при чтении потока:', error);
+    } finally {
+        reader.releaseLock();
+    }
+
+    return result;
+}
 
 const getJSON = async (url) => {
     console.log(url)
@@ -61,6 +61,25 @@ const getJSON = async (url) => {
   }
 
 
+const setUpdateVersion = async (version, imei) => {
+    const url = "http://vmt-term-srv.tha.kz/store/version"
+    const response = await fetch(url, {
+        method: "PUT", // *GET, POST, PUT, DELETE, etc.
+        // mode: "cors", // no-cors, *cors, same-origin
+        cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
+        // credentials: "same-origin", // include, *same-origin, omit
+        headers: {
+          "Sec-CH-UA-Full-Version": version,
+          "Sec-CH-UA-Model": "da4",
+          "Sec-CH-UA-UID": imei
+        }
+      });
+    if (!response.ok) {
+        throw new Error("network error");
+    }
+    const body = await readFromStream(response.body);
+    console.log(imei, body)
+}
 
 const getAssistant = async (id, imei) => {
     var require = {
@@ -79,15 +98,15 @@ const getAssistant = async (id, imei) => {
         });
     });
     let a = await promise;
-    if(imei == a.uid && a.id > 0) {
-        if(a.vehicle_id == 0) {
-            return await getAssistant(a.id + 1, imei)
-        } else {
-            return a
-        }
-    } else if(imei == "") {
+    // if(imei == a.uid && a.id > 0) {
+    //     if(a.vehicle_id == 0) {
+    //         return await getAssistant(a.id + 1, imei)
+    //     } else {
+    //         return a
+    //     }
+    // } else if(imei == "") {
         return a
-    }
+    // }
 }
 
 const getVehicle = async (ip) => {
@@ -101,7 +120,7 @@ const getVehicle = async (ip) => {
         obj.url = url
     } catch(error) {
         if(error.message === 'fetch failed') {
-            console.log('fetch failed', error.cause.code)
+            // console.log('fetch failed', error.cause.code)
             return
         }
         // console.log(error.toString())
@@ -145,7 +164,7 @@ const getVehicle = async (ip) => {
             obj.status = "Unknown"
             // console.error("client.getAssistant", error);
         }
-        console.log(obj)
+        // console.log(obj)
         return obj
   } catch (error) {
     console.error("getVehicle", error);
@@ -161,4 +180,4 @@ const getVehicle = async (ip) => {
 //     console.log(arg[0], v)
 // })();
 
-module.exports = { getVehicle, getJSON, getAssistant };
+module.exports = { getVehicle, getJSON, getAssistant, setUpdateVersion };

@@ -2,7 +2,7 @@
  * Скрипт по блокировке и разблокировке печати на ПВ
  */
 const { loadData, storeData, dynamicSort } = require("./tools.js")
-const { getVehicle, getAssistant } = require("./vehicle_stat.js")
+const { getVehicle, getAssistant, setUpdateVersion } = require("./vehicle_stat.js")
 const fs = require('fs')
 const http = require('http')
 
@@ -174,7 +174,7 @@ const download = async (ip, filename) => {
     storeData(vehicles, "vehicles.json")        
 
 */
-
+/*
     // IV этап - статистика
     //Загрузка скриншотов и обновление информации по тышникам там, где их не было
     vehicles = JSON.parse(loadData('vehicles.json'))
@@ -245,7 +245,7 @@ const download = async (ip, filename) => {
     stat.cash.log_unavailable.forEach(el => {
         console.log(JSON.stringify(el))
     })        
-
+*/
 /*
     // V - коллизии
     let arr = loadData('2024-08-02-2.csv').split('\n')
@@ -261,5 +261,17 @@ const download = async (ip, filename) => {
     }
     storeData(res, "vehicles_history.json") 
     */
+
+    let arr = loadData('vehicles.csv').replaceAll('"', '').split('\n')
+    var count = 0;
+    for(var i = 0; i < arr.length; i++) { //arr.length
+        const el = arr[i]
+        const v = el.split(',')
+        if("1.0.32" === v[2]) {
+            count++
+            setUpdateVersion("1.0.35", v[4])
+        }
+    } 
+    console.log("count:", count)
 })();
 

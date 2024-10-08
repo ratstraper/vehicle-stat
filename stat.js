@@ -21,14 +21,26 @@ const showAssistant = async (idAssistant) => {
     }
 }
 
-const allVehicles = async (filename, csv_format) => {
-    for(var y = 0; y < ips.length; y++) { 
-        let p = Array();
-        for(var i = 1; i < 256; i++) {
-            p.push(v(`${ips[y]}${i}`))
+const allVehicles = async (is_all, filename, csv_format) => {
+    if(is_all == true) {
+        for(var y = 1; y < 256; y++) {
+            let p = Array();
+            for(var i = 1; i < 256; i++) {
+                p.push(v(`10.131.${y}.${i}`))
+            }
+            let results = await Promise.all(p)
         }
-        let results = await Promise.all(p)
+    } else {
+        for(var y = 0; y < ips.length; y++) { 
+            let p = Array();
+            for(var i = 1; i < 256; i++) {
+                p.push(v(`${ips[y]}${i}`))
+            }
+            let results = await Promise.all(p)
+        }
     }
+
+
     vehicles.sort(dynamicSort("board"))
     vehicles.sort(dynamicSort("route"))
     if(csv_format) {
@@ -78,7 +90,7 @@ const installDA = async (filename, ip) => {
             //`http://${ip}:8080/install/app`,
             ip,
             filename,
-            (percentComplete) => { console.log('\033c', `Upload progress: ${percentComplete.toFixed(2)}%`)},
+            (percentComplete) => { console.log('\033c', `Upload progress[${ip}]: ${percentComplete.toFixed(2)}%`)},
             (response) => { console.log('Upload successful:', response) },
             (error) => { console.error('Upload failed:', error) }
         )
@@ -97,7 +109,9 @@ const v36 = async (ip) => {
     console.log(args)
 
     if(args.A) {
-        await allVehicles(args.o || "vehicles.json", args.csv)
+        await allVehicles(true, args.o || "vehicles.json", args.csv)
+    } else if(args.L) {
+        await allVehicles(false, args.o || "vehicles.json", args.csv)
         // await allVehiclesByStep(args.o || "vehicles.json")
     // } else if(args.B) {
     //     await v36("10.131.246.205")        
@@ -113,12 +127,17 @@ const v36 = async (ip) => {
         console.log("DA stat. Version: 1.0.0\n")
         console.log("Usage: node stat.js [options] <mainclass> [args...]\n")
         console.log(" where options include:\n")
+        console.log(" collect DAs:")
         console.log(" -A                collect all DAs data on the IP address range [10.131.240.x, 10.131.246.x]")
+        console.log(" -L                or collect all DAs data on the IP address range [10.131.1.1 - 10.131.255.255]")
         console.log(" --csv             converting output data to CSV format")
         console.log(" --o <filename>    save the result in a file named <filename>\n")
-        console.log(" -R <ip>           restart DA by IP\n")
-        console.log(" -T <ip>           restart TERMT005.031-031 R1 by IP\n")
-        console.log(" --id <number>     display data on DA ID which is equal to <number>\n")    
+        console.log(" restart:")
+        console.log(" -R <ip>           restart DA by IP")
+        console.log(" -T <ip>           or restart TERMT005.031-031 R1 by IP\n")
+        console.log(" information:")
+        console.log(" --id <number>     display data on DA ID which is equal to <number>\n")   
+
         // console.log(" -I                install new version")
         // console.log(" --file <filename> download apk-file")
         // console.log(" --ip <ip>         IP DA\n")    
