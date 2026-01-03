@@ -27,6 +27,16 @@ const readFromStream = async (stream) => {
     return result;
 }
 
+const restart = async (ip) => {
+    try {
+        let response = await fetch(`http://${ip}:8080/restart`, {method: 'POST'})
+        let result = await response.json()
+        console.log(`http://${ip}:8080`, result)
+    } catch(err) {
+        console.log(`http://${ip}:8080 - error`)
+    }
+}
+
 const cmd = async (ip, command) => {
     try {
         let response = await fetch(`http://${ip}:8080/run?cmd=${command}`, {method: 'GET'})
@@ -264,13 +274,22 @@ const download = async (ip, filename) => {
 
     let arr = loadData('vehicles.csv').replaceAll('"', '').split('\n')
     var count = 0;
-    for(var i = 0; i < arr.length; i++) { //arr.length
+    for(var i = 1; i < arr.length; i++) { //arr.length
         const el = arr[i]
         const v = el.split(',')
-        if("1.0.32" === v[2]) {
-            count++
-            setUpdateVersion("1.0.35", v[4])
-        }
+        // if(v[0].startsWith("(9") && count < 20) {
+            // if("1.0.32" === v[2] || "1.0.35" === v[2] || "1.0.37" === v[2]) {
+            if("У" === v[1].slice(v[1].length - 1)) {
+                count++
+                await restart(v[3].slice(7, -5))   //"http://10.131.240.138:8080"
+                // setUpdateVersion("1.0.39", v[4])
+            // } else if("1.1.36" === v[2]) {
+            //     count++
+            //     // await restart(v[3].slice(7, -5))
+            //     setUpdateVersion("1.1.38", v[4])
+            }
+        // }
+
     } 
     console.log("count:", count)
 })();

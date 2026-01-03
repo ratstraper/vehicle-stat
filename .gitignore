@@ -3,5 +3,8 @@
 /vehicles.json
 /*.csv
 /*.txt
+/*.apk
 /package-lock.json
 .env
+artefacts.md
+.codegpt

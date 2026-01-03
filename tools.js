@@ -1,6 +1,7 @@
 const fs = require('fs')
 const md5File = require('md5-file')
 const http = require('http')
+const { isArrayBuffer } = require('util/types')
 
 /**
  * 
@@ -155,5 +156,20 @@ const termRestart = async (ip) => {
       console.log(result)
 }
 
+/**
+ * Добавляет уникальное значение в массив по ключу в Map.
+ * @param {number} key - Ключ Map.
+ * @param {any} value - Значение для добавления.
+ */
+const addUniqueToMap = (map, key, value) =>{
+    if (!map.has(key)) {
+      map.set(key, [value]);
+    } else {
+      const arr = map.get(key);
+      if (!arr.includes(value)) {
+        arr.push(value);
+      }
+    }
+  }
 
-module.exports = { createIMEI, storeData, storeText, dynamicSort, uploadApk, jsonToCsv, loadData, cmd, restart, termRestart };
+module.exports = { createIMEI, storeData, storeText, dynamicSort, uploadApk, jsonToCsv, loadData, cmd, restart, termRestart, addUniqueToMap };

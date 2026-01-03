@@ -1,5 +1,6 @@
 const { createIMEI } = require("./tools.js")
 const { parse } = require("himalaya")
+const cheerio = require("cheerio")
 var grpc = require('@grpc/grpc-js');
 var protoLoader = require('@grpc/proto-loader');
 
@@ -39,9 +40,43 @@ async function readFromStream(stream) {
     return result;
 }
 
+const getText = async (url) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
+  
+    const response = await fetch(url, {
+        signal: controller.signal
+      });
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+        throw new Error("network error");
+    }
+    return await readFromStream(response.body);
+    // try {
+    //     return body;
+    // } catch(err) {
+    //     if(err.toString().startsWith('SyntaxError: Unexpected token')) {
+    //         var e = new Error("Format")
+    //         e.name = "Format"
+    //         e.message = body
+    //         throw e
+    //     }
+    //     // throw err
+    // }
+    // console.log(await response.text())
+  }
+
 const getJSON = async (url) => {
     console.log(url)
-    const response = await fetch(url);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
+  
+    const response = await fetch(url, {
+        signal: controller.signal
+      });
+    clearTimeout(timeoutId);
+
     if (!response.ok) {
         throw new Error("network error");
     }
@@ -57,7 +92,7 @@ const getJSON = async (url) => {
         }
         // throw err
     }
-    // console.log(await response.text())
+    console.log(await response.text())
   }
 
 
@@ -120,33 +155,30 @@ const getVehicle = async (ip) => {
         obj.url = url
     } catch(error) {
         if(error.message === 'fetch failed') {
-            // console.log('fetch failed', error.cause.code)
+            console.log('fetch failed', error.cause.code)
             return
         }
-        // console.log(error.toString())
-        // console.log(await error.message)
-        // console.log(url)
-        // return
-        // const response = await fetch(url);
-        // if (!response.ok) {
-        //    throw new Error("network error");
-        // }
-        // var r = await response.text();
-        const json = parse(error.message)
-        const body = json[2].children[3].children[1]
-        obj.board = body.children[3].children[3].children[0].content
-        obj.route = body.children[5].children[3].children[0].content
-        obj.appVersion = body.children[1].children[3].children[0].content
+
+        const rawHtml = error.message;
+        const $ = cheerio.load(rawHtml);
+        obj.board = $("body > div > div:nth-child(2) > div:nth-child(2)").text()
+        var route = $("body > div > div:nth-child(3) > div:nth-child(2)").text().split(" ")
+        obj.route = route[0]
+        obj.appVersion = $("body > div > div:nth-child(1) > div.col-6").text()
         obj.url = url
     }
+    // if(obj.appVersion == '1.1.43') return 
     try {
-        var n = await getJSON(`${url}/network`)
-        let imei = createIMEI(n["Mobile Equipment Identifier"])
+        var hardware = await getText(`${url}/hardware`)
+        var i = hardware.indexOf("Mobile Equipment Identifier")
+        var number_imei = hardware.substring(i + 29, i + 29+14)
+        console.log(number_imei)
+        let imei = createIMEI(number_imei)
         obj.imei = imei
-        obj.nfc = n["Radio NFC"]
-        obj.airmode = n["AirplaneMode"]
-        obj.printer = n["Printer Status"]
-        obj.dialer = n["Dialer"]
+        // obj.nfc = n["Radio NFC"]
+        // obj.airmode = n["AirplaneMode"]
+        // obj.printer = n["Printer Status"]
+        // obj.dialer = n["Dialer"]
         try {
             var t = await getJSON(`${url}/terminal`)
             obj.terminal = t.masterState.msamId
@@ -154,16 +186,16 @@ const getVehicle = async (ip) => {
             obj.terminal = ""
         }
 
-        try {
-            let assistant = await getAssistant(0, imei)
-            // obj.idAssistant = assistant.id
-            // obj.idVehicle = assistant.vehicle_id
-            obj.status = assistant.vehicle_status
-            // obj.provider = assistant.provider_name
-        } catch(error) {
-            obj.status = "Unknown"
-            // console.error("client.getAssistant", error);
-        }
+        // try {
+        //     let assistant = await getAssistant(0, imei)
+        //     // obj.idAssistant = assistant.id
+        //     // obj.idVehicle = assistant.vehicle_id
+        //     obj.status = assistant.vehicle_status
+        //     // obj.provider = assistant.provider_name
+        // } catch(error) {
+        //     obj.status = "Unknown"
+        //     // console.error("client.getAssistant", error);
+        // }
         // console.log(obj)
         return obj
   } catch (error) {
